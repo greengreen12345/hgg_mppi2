@@ -234,21 +234,13 @@ class HGGLearner:
         1. Early stage: sample from all historical trajectories, select points closer to the goal as subgoals
         2. Advanced stage: use value function to optimize subgoal selection based on successful trajectories
         """
-        if not hasattr(self.agent, 'use_direct_subgoal') or not self.agent.use_direct_subgoal:
-            return
-
+       
         condition = len(self.all_episode_trajectories) > 400 or len(self.success_history) >= self.min_success_trajectories
         advanced_stage = condition and not self.is_warmup
 
         if advanced_stage and not self.advanced_stage:
             self.advanced_stage = True
-            print(f"[Subgoal Training] Entered advanced training stage!")
-
-        if advanced_stage:
-            print(f"[Subgoal Training] Advanced stage: using {len(self.success_history)} successful trajectories for training")
-        else:
-            print(f"[Subgoal Training] Basic stage: sampling subgoals from {len(self.all_episode_trajectories)} historical trajectories")
-
+    
         subgoal_data = {
             'obs': [],
             'goal': [],
@@ -301,8 +293,6 @@ class HGGLearner:
                             valid_samples += 1
                             break
 
-            print(f"[Subgoal Training] Extracted {valid_samples} valid subgoal samples from historical trajectories")
-
         if advanced_stage:
             subgoal_data = {
                 'obs': [], 'goal': [], 'subgoal_target': []
@@ -339,17 +329,13 @@ class HGGLearner:
                                 subgoal_data['subgoal_target'].append(subgoal_target)
                                 success_samples += 1
                                 break
-
-                print(f"[Subgoal Training] Extracted {success_samples} subgoal samples from successful trajectories")
-
+                                
         if len(subgoal_data['obs']) < 10:
-            print("[Subgoal Training] Not enough valid training data, skipping training")
+            print("Not enough valid training data, skip training")
             return
 
         for key in subgoal_data:
             subgoal_data[key] = np.array(subgoal_data[key])
-
-        print(f"[Subgoal Training] Prepared {len(subgoal_data['obs'])} training samples")
 
         if len(subgoal_data['obs']) > 3000:
             recent_N = 1500
@@ -385,8 +371,7 @@ class HGGLearner:
                     total_loss += loss
 
         avg_loss = total_loss / max(1, n_batches)
-        print(f"[Subgoal Training] Training complete, average loss: {avg_loss:.4f}")
-
+        
         return {"subgoal_loss": avg_loss}
 
 
